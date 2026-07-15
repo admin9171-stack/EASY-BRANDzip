@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Easy-Brand Store"
+version = "1.0.0"
+id = "artifacts/easy-brand"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23719
+
+[services.development]
+run = "pnpm --filter @workspace/easy-brand run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/easy-brand", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/easy-brand/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23719"
+BASE_PATH = "/"

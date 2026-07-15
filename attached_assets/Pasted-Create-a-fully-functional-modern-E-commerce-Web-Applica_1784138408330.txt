@@ -1,0 +1,37 @@
+Create a fully functional, modern E-commerce Web Application for a clothing brand named "Easy-Brand". The design and user flow must accurately replicate the structure shown in the attached screenshots.
+
+Key Specifications & Structure:
+
+1. Brand Identity & Header Banner:
+   - Brand Name: Easy-Brand (Clothing Brand)
+   - Store Location: Zindabazar, Sylhet, Bangladesh
+   - Contact Info: Phone (+880-456-7890), Email (easybrand@support.com), Website (www.easybrand.com)
+   - Color Scheme: Dark/charcoal background for the top hero banner with white text and gold/yellow typography highlights for the brand name, similar to the reference image.
+   - Navigation Menu Items: Home, Sections, Shop, Contact Us, Custom Links, Responsive Design, Main Features, Support Section, Uncategorized.
+   - Include a global search bar ("Search products...") and a "My Account Login" option.
+
+2. Homepage Sections:
+   - Main Hero Banner: A prominent banner displaying a stylish couple clothing photo on the left/center and branding details.
+   - Tabbed or categorized product displays: "Best Selling Products", "Featured Products", "On Sale Products", and "All Products".
+   - Footer Grid: Include a brand description ("Easy Brand: A online clothing store"), shop location details, download app links, and accepted payment badges (Visa, MasterCard, PayPal, Stripe, JCB, American Express).
+
+3. Product Grid & Cards:
+   - Implement functional product cards featuring clothing items (e.g., Adidas Ash Hoodie, LV White Tracksuit, Formal Full Black Shirt, Zipper Dior Off-White Jacket, Denim Hoodie Charcoal Jacket).
+   - Each card must display: Image, Product Title, Original Price (strikethrough), Discounted/Sale Price, "ADD TO CART" button, and an "ADD TO WISHLIST" icon button.
+
+4. Cart System (Dynamic Modal/Slide-out & Dedicated Page):
+   - A mini-cart preview overlay showing item name, quantity, item image, subtotal, and quick navigation buttons ("View Cart", "Checkout").
+   - A dedicated "/cart" page displaying an itemized list of added products with an image, title, price, quantity selector (+/- buttons), a "Remove item" link, coupon section, and a clear "Estimated Total" display with a prominent "Proceed to Checkout" button.
+
+5. Checkout & Order Flow:
+   - A multi-section /checkout form capturing Contact Information (Email) and Billing Address (Country, First Name, Last Name, Company, Street Address, City, State, ZIP Code, Phone).
+   - An "Order Summary" box displaying the itemized breakdown, discounts applied, and the absolute total.
+   - Payment Options: Direct Bank Transfer, Check Payments, and Cash on Delivery (selected by default as per reference).
+   - An interactive "Place Order" button.
+
+6. Order Confirmation ("Thank You" Page):
+   - A final success state displaying: "Thank you. Your order has been received."
+   - Explicit order details metadata: Order Number, Date, Email, Total, Payment Method, along with an itemized receipt grid and the Billing Address breakdown.
+
+Technical Requirements:
+- Make the entire web app highly responsive, fast, and visually clean using modern HTML, CSS (Tailwind CSS or clean custom styling), and JavaScript for dynamic frontend behavior (state management for the shopping cart and checkout flows). Ensure the color palette primarily relies on dark gray, white, orange/gold accents for links, buttons, and badges.
