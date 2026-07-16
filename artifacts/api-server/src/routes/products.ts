@@ -36,7 +36,7 @@ router.get("/products", async (req, res): Promise<void> => {
   const conditions: SQL[] = [];
 
   if (filters.category) {
-    conditions.push(eq(productsTable.category, filters.category));
+    conditions.push(ilike(productsTable.category, filters.category));
   }
   if (filters.featured === true) {
     conditions.push(eq(productsTable.isFeatured, true));
