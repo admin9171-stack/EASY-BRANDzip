@@ -26,8 +26,7 @@ async function seed() {
         description:
           "Premium heavyweight cotton hoodie with a relaxed fit. Built for comfort and street credibility.",
         price: "59.99",
-        image:
-          "https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=600&q=80",
+        image: "https://picsum.photos/seed/hoodie1/600/800",
         category: "Hoodies",
         inStock: true,
         isFeatured: true,
@@ -42,7 +41,7 @@ async function seed() {
         price: "74.99",
         originalPrice: "89.99",
         image:
-          "https://images.unsplash.com/photo-1578768079052-aa76e52ff3a8?w=600&q=80",
+          "https://picsum.photos/seed/hoodie2/600/800",
         category: "Hoodies",
         inStock: true,
         isFeatured: false,
@@ -56,7 +55,7 @@ async function seed() {
           "Premium oversized tee with bold street graphics. 100% organic cotton.",
         price: "34.99",
         image:
-          "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=600&q=80",
+          "https://picsum.photos/seed/tee1/600/800",
         category: "T-Shirts",
         inStock: true,
         isFeatured: true,
@@ -70,7 +69,7 @@ async function seed() {
           "Clean, minimal slim-fit tee. Perfect base layer for any outfit.",
         price: "24.99",
         image:
-          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80",
+          "https://picsum.photos/seed/tee2/600/800",
         category: "T-Shirts",
         inStock: true,
         isFeatured: false,
@@ -84,7 +83,7 @@ async function seed() {
         price: "39.99",
         originalPrice: "49.99",
         image:
-          "https://images.unsplash.com/photo-1622445275463-afa2ab738c34?w=600&q=80",
+          "https://picsum.photos/seed/polo1/600/800",
         category: "T-Shirts",
         inStock: true,
         isFeatured: false,
@@ -98,7 +97,7 @@ async function seed() {
           "Sleek bomber jacket with satin lining and ribbed details. A streetwear cornerstone.",
         price: "119.99",
         image:
-          "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80",
+          "https://picsum.photos/seed/jacket1/600/800",
         category: "Jackets",
         inStock: true,
         isFeatured: true,
@@ -113,7 +112,7 @@ async function seed() {
         price: "99.99",
         originalPrice: "129.99",
         image:
-          "https://images.unsplash.com/photo-1548126032-079a0fb0099d?w=600&q=80",
+          "https://picsum.photos/seed/jacket2/600/800",
         category: "Jackets",
         inStock: true,
         isFeatured: false,
@@ -127,7 +126,7 @@ async function seed() {
           "Tailored slim-fit chinos that go from desk to street effortlessly.",
         price: "54.99",
         image:
-          "https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&q=80",
+          "https://picsum.photos/seed/chinos1/600/800",
         category: "Pants",
         inStock: true,
         isFeatured: false,
@@ -140,7 +139,7 @@ async function seed() {
           "Cozy tapered joggers with elastic waistband. Built for the active lifestyle.",
         price: "44.99",
         image:
-          "https://images.unsplash.com/photo-1594381898411-846e7d193883?w=600&q=80",
+          "https://picsum.photos/seed/jogger1/600/800",
         category: "Pants",
         inStock: true,
         isFeatured: true,
@@ -155,7 +154,7 @@ async function seed() {
         price: "49.99",
         originalPrice: "64.99",
         image:
-          "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&q=80",
+          "https://picsum.photos/seed/track1/600/800",
         category: "Pants",
         inStock: true,
         isFeatured: false,
