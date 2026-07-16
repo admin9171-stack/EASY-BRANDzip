@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, productsTable } from "@workspace/db";
 import { AddCartItemBody, UpdateCartItemBody, UpdateCartItemParams, RemoveCartItemParams } from "@workspace/api-zod";
-import { getSessionId, getSession } from "../lib/session";
+import { getSessionId, getSession, saveSession } from "../lib/session";
 
 const router: IRouter = Router();
 
@@ -24,14 +24,13 @@ function formatProduct(p: typeof productsTable.$inferSelect) {
 }
 
 async function buildCartResponse(sessionId: string) {
-  const session = getSession(sessionId);
+  const session = await getSession(sessionId);
   const cartItems = session.cart;
 
   if (cartItems.length === 0) {
     return { items: [], subtotal: 0, total: 0, itemCount: 0 };
   }
 
-  const productIds = cartItems.map((i) => i.productId);
   const products = await db.select().from(productsTable);
   const productMap = new Map(products.map((p) => [p.id, p]));
 
@@ -58,7 +57,7 @@ async function buildCartResponse(sessionId: string) {
 }
 
 router.get("/cart", async (req, res): Promise<void> => {
-  const sid = getSessionId(req, res);
+  const sid = await getSessionId(req, res);
   const cart = await buildCartResponse(sid);
   res.json(cart);
 });
@@ -77,14 +76,15 @@ router.post("/cart/items", async (req, res): Promise<void> => {
     return;
   }
 
-  const sid = getSessionId(req, res);
-  const session = getSession(sid);
+  const sid = await getSessionId(req, res);
+  const session = await getSession(sid);
   const existing = session.cart.find((i) => i.productId === productId);
   if (existing) {
     existing.quantity += quantity;
   } else {
     session.cart.push({ productId, quantity });
   }
+  await saveSession(sid, session);
 
   const cart = await buildCartResponse(sid);
   res.json(cart);
@@ -104,12 +104,13 @@ router.put("/cart/items/:productId", async (req, res): Promise<void> => {
     return;
   }
 
-  const sid = getSessionId(req, res);
-  const session = getSession(sid);
+  const sid = await getSessionId(req, res);
+  const session = await getSession(sid);
   const item = session.cart.find((i) => i.productId === params.data.productId);
   if (item) {
     item.quantity = Math.max(1, bodyParsed.data.quantity);
   }
+  await saveSession(sid, session);
 
   const cart = await buildCartResponse(sid);
   res.json(cart);
@@ -123,18 +124,20 @@ router.delete("/cart/items/:productId", async (req, res): Promise<void> => {
     return;
   }
 
-  const sid = getSessionId(req, res);
-  const session = getSession(sid);
+  const sid = await getSessionId(req, res);
+  const session = await getSession(sid);
   session.cart = session.cart.filter((i) => i.productId !== params.data.productId);
+  await saveSession(sid, session);
 
   const cart = await buildCartResponse(sid);
   res.json(cart);
 });
 
 router.delete("/cart/clear", async (req, res): Promise<void> => {
-  const sid = getSessionId(req, res);
-  const session = getSession(sid);
+  const sid = await getSessionId(req, res);
+  const session = await getSession(sid);
   session.cart = [];
+  await saveSession(sid, session);
   res.json({ items: [], subtotal: 0, total: 0, itemCount: 0 });
 });
 

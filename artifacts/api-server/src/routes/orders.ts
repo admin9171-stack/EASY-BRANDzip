@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, productsTable, ordersTable, orderItemsTable } from "@workspace/db";
 import { PlaceOrderBody, GetOrderParams } from "@workspace/api-zod";
-import { getSessionId, getSession } from "../lib/session";
+import { getSessionId, getSession, saveSession } from "../lib/session";
 
 const router: IRouter = Router();
 
@@ -84,10 +84,11 @@ router.post("/orders", async (req, res): Promise<void> => {
     }))
   );
 
-  // Clear cart after order
-  const sid = getSessionId(req, res);
-  const session = getSession(sid);
+  // Clear cart after order is placed
+  const sid = await getSessionId(req, res);
+  const session = await getSession(sid);
   session.cart = [];
+  await saveSession(sid, session);
 
   const paymentMethodLabel =
     paymentMethod === "bank_transfer"

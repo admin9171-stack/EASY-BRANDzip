@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, productsTable } from "@workspace/db";
 import { AddWishlistItemBody, RemoveWishlistItemParams } from "@workspace/api-zod";
-import { getSessionId, getSession } from "../lib/session";
+import { getSessionId, getSession, saveSession } from "../lib/session";
 
 const router: IRouter = Router();
 
@@ -24,7 +24,7 @@ function formatProduct(p: typeof productsTable.$inferSelect) {
 }
 
 async function buildWishlistResponse(sessionId: string) {
-  const session = getSession(sessionId);
+  const session = await getSession(sessionId);
   const wishlistItems = session.wishlist;
 
   if (wishlistItems.length === 0) {
@@ -46,7 +46,7 @@ async function buildWishlistResponse(sessionId: string) {
 }
 
 router.get("/wishlist", async (req, res): Promise<void> => {
-  const sid = getSessionId(req, res);
+  const sid = await getSessionId(req, res);
   const wishlist = await buildWishlistResponse(sid);
   res.json(wishlist);
 });
@@ -65,11 +65,12 @@ router.post("/wishlist/items", async (req, res): Promise<void> => {
     return;
   }
 
-  const sid = getSessionId(req, res);
-  const session = getSession(sid);
+  const sid = await getSessionId(req, res);
+  const session = await getSession(sid);
   if (!session.wishlist.find((i) => i.productId === productId)) {
     session.wishlist.push({ productId });
   }
+  await saveSession(sid, session);
 
   const wishlist = await buildWishlistResponse(sid);
   res.json(wishlist);
@@ -83,9 +84,10 @@ router.delete("/wishlist/items/:productId", async (req, res): Promise<void> => {
     return;
   }
 
-  const sid = getSessionId(req, res);
-  const session = getSession(sid);
+  const sid = await getSessionId(req, res);
+  const session = await getSession(sid);
   session.wishlist = session.wishlist.filter((i) => i.productId !== params.data.productId);
+  await saveSession(sid, session);
 
   const wishlist = await buildWishlistResponse(sid);
   res.json(wishlist);

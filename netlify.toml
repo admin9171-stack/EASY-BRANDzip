@@ -1,0 +1,48 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Netlify build configuration – Easy-Brand Store
+#
+# Frontend  : Vite SPA  → published from artifacts/easy-brand/dist/public
+# Backend   : Express   → pre-bundled Netlify Function (serverless-http)
+#
+# Required environment variables (set in Netlify dashboard → Site settings →
+# Environment variables):
+#
+#   DATABASE_URL   – PostgreSQL connection string
+#   SESSION_SECRET – Secret for signing session cookies
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+  # Netlify auto-detects pnpm from pnpm-lock.yaml and runs `pnpm install`.
+  # This command builds the API bundle first, then the Vite frontend.
+  command = "pnpm run build"
+  publish = "artifacts/easy-brand/dist/public"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Vite requires BASE_PATH; "/" = deployed at site root
+  BASE_PATH = "/"
+
+# ── Netlify Functions ────────────────────────────────────────────────────────
+# The API server is pre-bundled by esbuild into dist/netlify/api.mjs.
+# node_bundler = "none" tells Netlify to serve the file as-is (no re-bundling).
+[functions]
+  directory    = "artifacts/api-server/dist/netlify"
+  node_bundler = "none"
+
+# ── Redirects ────────────────────────────────────────────────────────────────
+
+# 1. Proxy all /api/* traffic to the Netlify Function.
+#    The :splat captures the sub-path (e.g. /api/products → /products).
+#    The serverless handler mounts Express routes at "/" (not "/api"), so
+#    this stripped path routes correctly.
+[[redirects]]
+  from   = "/api/*"
+  to     = "/.netlify/functions/api/:splat"
+  status = 200
+  force  = true
+
+# 2. SPA catch-all so React Router deep links and page refreshes work.
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
