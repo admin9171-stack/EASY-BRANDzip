@@ -10,6 +10,7 @@ import ProductDetail from '@/pages/product-detail';
 import Cart from '@/pages/cart';
 import Checkout from '@/pages/checkout';
 import OrderConfirmation from '@/pages/order-confirmation';
+import { CartUIProvider } from '@/context/cart-ui';
 
 const queryClient = new QueryClient();
 
@@ -31,10 +32,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
+        <CartUIProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </CartUIProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

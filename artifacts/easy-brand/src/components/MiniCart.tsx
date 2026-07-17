@@ -7,10 +7,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { useCartUI } from "@/context/cart-ui";
 
 export function MiniCart() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const { isOpen, setIsOpen } = useCartUI();
   const { data: cart } = useGetCart({ query: { queryKey: getGetCartQueryKey() } });
   
   const updateItemMutation = useUpdateCartItem();
@@ -42,7 +44,7 @@ export function MiniCart() {
   const itemCount = cart?.itemCount || 0;
 
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <button className="relative p-2 text-secondary hover:text-primary transition-colors">
           <ShoppingBag className="w-5 h-5" />
@@ -130,11 +132,20 @@ export function MiniCart() {
             </div>
             <p className="text-xs text-muted-foreground mb-4">Shipping and taxes calculated at checkout.</p>
             <div className="flex flex-col gap-2">
-              <Button asChild className="w-full rounded-none" size="lg">
-                <Link href="/checkout">Checkout</Link>
+              <Button
+                className="w-full rounded-none"
+                size="lg"
+                onClick={() => { setIsOpen(false); setLocation("/checkout"); }}
+              >
+                Checkout
               </Button>
-              <Button asChild variant="outline" className="w-full rounded-none" size="lg">
-                <Link href="/cart">View Cart</Link>
+              <Button
+                variant="outline"
+                className="w-full rounded-none"
+                size="lg"
+                onClick={() => { setIsOpen(false); setLocation("/cart"); }}
+              >
+                View Cart
               </Button>
             </div>
           </div>
