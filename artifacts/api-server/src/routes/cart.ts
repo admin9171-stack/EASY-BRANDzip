@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, productsTable } from "@workspace/db";
+import { db, dbAvailable, productsTable } from "@workspace/db";
 import { AddCartItemBody, UpdateCartItemBody, UpdateCartItemParams, RemoveCartItemParams } from "@workspace/api-zod";
-import { getSessionId, getSession, saveSession } from "../lib/session";
+import { getSessionId, getSession, saveSession } from "../lib/session.js";
+import { getStaticProductMap } from "../data/static-catalog.js";
 
 const router: IRouter = Router();
 
@@ -23,6 +24,22 @@ function formatProduct(p: typeof productsTable.$inferSelect) {
   };
 }
 
+/**
+ * Returns a Map<id, FormattedProduct> from either the live DB or static data.
+ * Used to enrich cart items with full product details.
+ */
+async function getProductMap(): Promise<Map<number, ReturnType<typeof formatProduct>>> {
+  if (dbAvailable) {
+    try {
+      const products = await db.select().from(productsTable);
+      return new Map(products.map((p) => [p.id, formatProduct(p)]));
+    } catch {
+      // fall through to static
+    }
+  }
+  return getStaticProductMap() as Map<number, ReturnType<typeof formatProduct>>;
+}
+
 async function buildCartResponse(sessionId: string) {
   const session = await getSession(sessionId);
   const cartItems = session.cart;
@@ -31,8 +48,7 @@ async function buildCartResponse(sessionId: string) {
     return { items: [], subtotal: 0, total: 0, itemCount: 0 };
   }
 
-  const products = await db.select().from(productsTable);
-  const productMap = new Map(products.map((p) => [p.id, p]));
+  const productMap = await getProductMap();
 
   let subtotal = 0;
   let itemCount = 0;
@@ -40,13 +56,13 @@ async function buildCartResponse(sessionId: string) {
     .map((item) => {
       const product = productMap.get(item.productId);
       if (!product) return null;
-      const unitPrice = parseFloat(product.price);
+      const unitPrice = product.price;
       const lineTotal = unitPrice * item.quantity;
       subtotal += lineTotal;
       itemCount += item.quantity;
       return {
         productId: item.productId,
-        product: formatProduct(product),
+        product,
         quantity: item.quantity,
         lineTotal,
       };
@@ -70,10 +86,26 @@ router.post("/cart/items", async (req, res): Promise<void> => {
   }
 
   const { productId, quantity } = parsed.data;
-  const [product] = await db.select().from(productsTable).where(eq(productsTable.id, productId));
-  if (!product) {
-    res.status(404).json({ error: "Product not found" });
-    return;
+
+  // Verify product exists (DB or static)
+  const productMap = await getProductMap();
+  if (!productMap.has(productId)) {
+    // Try DB directly if available
+    if (dbAvailable) {
+      try {
+        const [product] = await db.select().from(productsTable).where(eq(productsTable.id, productId));
+        if (!product) {
+          res.status(404).json({ error: "Product not found" });
+          return;
+        }
+      } catch {
+        res.status(404).json({ error: "Product not found" });
+        return;
+      }
+    } else {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
   }
 
   const sid = await getSessionId(req, res);

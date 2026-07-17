@@ -1,10 +1,15 @@
 import { Router, type IRouter } from "express";
 import { eq, and, ilike, or, type SQL } from "drizzle-orm";
-import { db, productsTable, categoriesTable } from "@workspace/db";
+import { db, dbAvailable, productsTable, categoriesTable } from "@workspace/db";
 import {
   ListProductsQueryParams,
   GetProductParams,
 } from "@workspace/api-zod";
+import {
+  STATIC_CATEGORIES,
+  filterStaticProducts,
+  STATIC_PRODUCTS,
+} from "../data/static-catalog.js";
 
 const router: IRouter = Router();
 
@@ -33,35 +38,48 @@ router.get("/products", async (req, res): Promise<void> => {
   }
 
   const filters = parsed.data;
-  const conditions: SQL[] = [];
 
-  if (filters.category) {
-    conditions.push(ilike(productsTable.category, filters.category));
-  }
-  if (filters.featured === true) {
-    conditions.push(eq(productsTable.isFeatured, true));
-  }
-  if (filters.onSale === true) {
-    conditions.push(eq(productsTable.isOnSale, true));
-  }
-  if (filters.bestSelling === true) {
-    conditions.push(eq(productsTable.isBestSelling, true));
-  }
-  if (filters.search) {
-    conditions.push(
-      or(
-        ilike(productsTable.name, `%${filters.search}%`),
-        ilike(productsTable.description, `%${filters.search}%`)
-      ) as SQL
-    );
+  // ── Static fallback (no DB available) ──────────────────────────────────────
+  if (!dbAvailable) {
+    res.json(filterStaticProducts(filters));
+    return;
   }
 
-  const products =
-    conditions.length > 0
-      ? await db.select().from(productsTable).where(and(...conditions))
-      : await db.select().from(productsTable);
+  // ── Live DB query ───────────────────────────────────────────────────────────
+  try {
+    const conditions: SQL[] = [];
 
-  res.json(products.map(formatProduct));
+    if (filters.category) {
+      conditions.push(ilike(productsTable.category, filters.category));
+    }
+    if (filters.featured === true) {
+      conditions.push(eq(productsTable.isFeatured, true));
+    }
+    if (filters.onSale === true) {
+      conditions.push(eq(productsTable.isOnSale, true));
+    }
+    if (filters.bestSelling === true) {
+      conditions.push(eq(productsTable.isBestSelling, true));
+    }
+    if (filters.search) {
+      conditions.push(
+        or(
+          ilike(productsTable.name, `%${filters.search}%`),
+          ilike(productsTable.description, `%${filters.search}%`)
+        ) as SQL
+      );
+    }
+
+    const products =
+      conditions.length > 0
+        ? await db.select().from(productsTable).where(and(...conditions))
+        : await db.select().from(productsTable);
+
+    res.json(products.map(formatProduct));
+  } catch {
+    // DB unreachable at runtime — serve static catalogue
+    res.json(filterStaticProducts(filters));
+  }
 });
 
 router.get("/products/:id", async (req, res): Promise<void> => {
@@ -72,22 +90,54 @@ router.get("/products/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [product] = await db
-    .select()
-    .from(productsTable)
-    .where(eq(productsTable.id, parsed.data.id));
-
-  if (!product) {
-    res.status(404).json({ error: "Product not found" });
+  // ── Static fallback ─────────────────────────────────────────────────────────
+  if (!dbAvailable) {
+    const product = STATIC_PRODUCTS.find((p) => p.id === parsed.data.id);
+    if (!product) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+    res.json(product);
     return;
   }
 
-  res.json(formatProduct(product));
+  // ── Live DB query ────────────────────────────────────────────────────────────
+  try {
+    const [product] = await db
+      .select()
+      .from(productsTable)
+      .where(eq(productsTable.id, parsed.data.id));
+
+    if (!product) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+
+    res.json(formatProduct(product));
+  } catch {
+    const product = STATIC_PRODUCTS.find((p) => p.id === parsed.data.id);
+    if (!product) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+    res.json(product);
+  }
 });
 
 router.get("/categories", async (_req, res): Promise<void> => {
-  const cats = await db.select().from(categoriesTable).orderBy(categoriesTable.name);
-  res.json(cats.map((c) => ({ id: c.id, name: c.name, slug: c.slug })));
+  // ── Static fallback ─────────────────────────────────────────────────────────
+  if (!dbAvailable) {
+    res.json(STATIC_CATEGORIES);
+    return;
+  }
+
+  // ── Live DB query ────────────────────────────────────────────────────────────
+  try {
+    const cats = await db.select().from(categoriesTable).orderBy(categoriesTable.name);
+    res.json(cats.map((c) => ({ id: c.id, name: c.name, slug: c.slug })));
+  } catch {
+    res.json(STATIC_CATEGORIES);
+  }
 });
 
 export default router;

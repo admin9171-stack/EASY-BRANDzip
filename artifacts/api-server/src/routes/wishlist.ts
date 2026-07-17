@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, productsTable } from "@workspace/db";
+import { db, dbAvailable, productsTable } from "@workspace/db";
 import { AddWishlistItemBody, RemoveWishlistItemParams } from "@workspace/api-zod";
-import { getSessionId, getSession, saveSession } from "../lib/session";
+import { getSessionId, getSession, saveSession } from "../lib/session.js";
+import { getStaticProductMap } from "../data/static-catalog.js";
 
 const router: IRouter = Router();
 
@@ -23,6 +24,21 @@ function formatProduct(p: typeof productsTable.$inferSelect) {
   };
 }
 
+/**
+ * Returns a Map<id, FormattedProduct> from either the live DB or static data.
+ */
+async function getProductMap(): Promise<Map<number, ReturnType<typeof formatProduct>>> {
+  if (dbAvailable) {
+    try {
+      const products = await db.select().from(productsTable);
+      return new Map(products.map((p) => [p.id, formatProduct(p)]));
+    } catch {
+      // fall through to static
+    }
+  }
+  return getStaticProductMap() as Map<number, ReturnType<typeof formatProduct>>;
+}
+
 async function buildWishlistResponse(sessionId: string) {
   const session = await getSession(sessionId);
   const wishlistItems = session.wishlist;
@@ -31,14 +47,13 @@ async function buildWishlistResponse(sessionId: string) {
     return { items: [], itemCount: 0 };
   }
 
-  const products = await db.select().from(productsTable);
-  const productMap = new Map(products.map((p) => [p.id, p]));
+  const productMap = await getProductMap();
 
   const items = wishlistItems
     .map((item) => {
       const product = productMap.get(item.productId);
       if (!product) return null;
-      return { productId: item.productId, product: formatProduct(product) };
+      return { productId: item.productId, product };
     })
     .filter(Boolean);
 
@@ -59,10 +74,25 @@ router.post("/wishlist/items", async (req, res): Promise<void> => {
   }
 
   const { productId } = parsed.data;
-  const [product] = await db.select().from(productsTable).where(eq(productsTable.id, productId));
-  if (!product) {
-    res.status(404).json({ error: "Product not found" });
-    return;
+
+  // Verify product exists (DB or static)
+  const productMap = await getProductMap();
+  if (!productMap.has(productId)) {
+    if (dbAvailable) {
+      try {
+        const [product] = await db.select().from(productsTable).where(eq(productsTable.id, productId));
+        if (!product) {
+          res.status(404).json({ error: "Product not found" });
+          return;
+        }
+      } catch {
+        res.status(404).json({ error: "Product not found" });
+        return;
+      }
+    } else {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
   }
 
   const sid = await getSessionId(req, res);

@@ -4,13 +4,23 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
+/**
+ * `dbAvailable` is true only when DATABASE_URL is set.
+ * When false, `db` is undefined at runtime — all callers must guard with
+ * `if (!dbAvailable)` before touching `db`.
+ *
+ * This allows the Netlify function bundle to load and serve static product
+ * data without a live database connection.
+ */
+export let dbAvailable = false;
+// Definite-assignment assertion: TypeScript trusts callers to check dbAvailable first.
+export let db!: ReturnType<typeof drizzle<typeof schema>>;
+export let pool: pg.Pool | undefined;
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool, { schema });
+if (process.env.DATABASE_URL) {
+  pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  db = drizzle(pool, { schema });
+  dbAvailable = true;
+}
 
 export * from "./schema";

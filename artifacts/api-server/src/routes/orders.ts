@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, productsTable, ordersTable, orderItemsTable } from "@workspace/db";
+import { db, dbAvailable, productsTable, ordersTable, orderItemsTable } from "@workspace/db";
 import { PlaceOrderBody, GetOrderParams } from "@workspace/api-zod";
-import { getSessionId, getSession, saveSession } from "../lib/session";
+import { getSessionId, getSession, saveSession } from "../lib/session.js";
 
 const router: IRouter = Router();
 
@@ -24,6 +24,11 @@ function formatProduct(p: typeof productsTable.$inferSelect) {
 }
 
 router.post("/orders", async (req, res): Promise<void> => {
+  if (!dbAvailable) {
+    res.status(503).json({ error: "Order processing requires a database connection. Please try again later." });
+    return;
+  }
+
   const parsed = PlaceOrderBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -122,6 +127,11 @@ router.post("/orders", async (req, res): Promise<void> => {
 });
 
 router.get("/orders/:orderNumber", async (req, res): Promise<void> => {
+  if (!dbAvailable) {
+    res.status(503).json({ error: "Order lookup requires a database connection." });
+    return;
+  }
+
   const rawNum = Array.isArray(req.params.orderNumber)
     ? req.params.orderNumber[0]
     : req.params.orderNumber;
